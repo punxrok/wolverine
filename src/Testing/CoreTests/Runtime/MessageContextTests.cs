@@ -115,7 +115,7 @@ public class MessageContextTests
 
         theEnvelope.ScheduledTime.ShouldBe(scheduledTime);
 
-        await theContext.Storage.Inbox.Received().ScheduleJobAsync(theEnvelope);
+        await theContext.Storage.Inbox.Received().ScheduleExecutionAsync(theEnvelope);
     }
 
     [Fact]

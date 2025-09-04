@@ -139,7 +139,7 @@ public class MessageContext : MessageBus, IMessageContext, IHasTenantId, IEnvelo
         }
         else
         {
-            await Storage.Inbox.ScheduleJobAsync(Envelope);
+            await Storage.Inbox.ScheduleExecutionAsync(Envelope);
         }
     }
 
