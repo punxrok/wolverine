@@ -437,4 +437,13 @@ public partial class Envelope : IHasTenantId
     /// For stream based transports (Kafka/RedPanda, this will reflect the message offset. This is strictly informational
     /// </summary>
     public long Offset { get; set; }
+    
+    /// <summary>
+    /// Mark this envelope to use ScheduleExecutionAsync (update existing record) instead of ScheduleJobAsync (create new record)
+    /// when rescheduling through ReScheduleAsync
+    /// </summary>
+    public void MarkForRescheduleExisting()
+    {
+        Headers[EnvelopeConstants.RescheduleExistingKey] = "true";
+    }
 }
