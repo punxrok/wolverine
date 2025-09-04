@@ -185,6 +185,21 @@ public class MessageContextTests
         theEnvelope.ScheduledTime.Value.ShouldBeInRange(expectedTime.AddSeconds(-1), expectedTime.AddSeconds(1));
         await theContext.Storage.Inbox.Received().ScheduleExecutionAsync(theEnvelope);
     }
+    
+    [Fact]
+    public async Task reschedule_convenience_methods_set_reschedule_existing_header()
+    {
+        var callback = Substitute.For<IChannelCallback>();
+        var scheduledTime = DateTime.Today.AddHours(8);
+
+        theContext.ReadEnvelope(theEnvelope, callback);
+
+        // Test that the convenience extension methods set the header
+        await theContext.RescheduleAsync(scheduledTime);
+
+        theEnvelope.Headers.ShouldContainKey(EnvelopeConstants.RescheduleExistingKey);
+        theEnvelope.Headers[EnvelopeConstants.RescheduleExistingKey].ShouldBe("true");
+    }
 
     [Fact]
     public async Task move_to_dead_letter_queue_without_native_dead_letter()
