@@ -583,4 +583,15 @@ public class EnvelopeTests
             theScheduledEnvelope.ContentType.ShouldBe(TransportConstants.SerializedEnvelope);
         }
     }
+    
+    [Fact]
+    public void mark_for_reschedule_existing_sets_correct_header()
+    {
+        var envelope = new Envelope();
+        
+        envelope.MarkForRescheduleExisting();
+        
+        envelope.Headers.ShouldContainKey(EnvelopeConstants.RescheduleExistingKey);
+        envelope.Headers[EnvelopeConstants.RescheduleExistingKey].ShouldBe("true");
+    }
 }

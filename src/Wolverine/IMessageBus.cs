@@ -53,6 +53,11 @@ public static class MessageBusExtensions
     /// <returns></returns>
     public static Task RescheduleAsync(this IMessageContext context, DateTimeOffset scheduledTime)
     {
+        // Mark the envelope for rescheduling existing record as documented
+        if (context.Envelope != null)
+        {
+            context.Envelope.MarkForRescheduleExisting();
+        }
         return ((IEnvelopeLifecycle)context).ReScheduleAsync(scheduledTime);
     }
     
@@ -66,6 +71,11 @@ public static class MessageBusExtensions
     /// <returns></returns>
     public static Task RescheduleAsync(this IMessageContext context, TimeSpan delay)
     {
+        // Mark the envelope for rescheduling existing record as documented
+        if (context.Envelope != null)
+        {
+            context.Envelope.MarkForRescheduleExisting();
+        }
         return ((IEnvelopeLifecycle)context).ReScheduleAsync(DateTimeOffset.UtcNow.Add(delay));
     }
 }

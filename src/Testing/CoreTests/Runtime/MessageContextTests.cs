@@ -115,7 +115,27 @@ public class MessageContextTests
 
         theEnvelope.ScheduledTime.ShouldBe(scheduledTime);
 
+        await theContext.Storage.Inbox.Received().ScheduleJobAsync(theEnvelope);
+        await theContext.Storage.Inbox.DidNotReceive().ScheduleExecutionAsync(theEnvelope);
+    }
+
+    [Fact]
+    public async Task reschedule_without_native_scheduling_with_reschedule_existing_header()
+    {
+        var callback = Substitute.For<IChannelCallback>();
+        var scheduledTime = DateTime.Today.AddHours(8);
+
+        theContext.ReadEnvelope(theEnvelope, callback);
+        
+        // Mark the envelope for rescheduling existing record
+        theEnvelope.MarkForRescheduleExisting();
+
+        await theContext.ReScheduleAsync(scheduledTime);
+
+        theEnvelope.ScheduledTime.ShouldBe(scheduledTime);
+
         await theContext.Storage.Inbox.Received().ScheduleExecutionAsync(theEnvelope);
+        await theContext.Storage.Inbox.DidNotReceive().ScheduleJobAsync(theEnvelope);
     }
 
     [Fact]
@@ -164,6 +184,21 @@ public class MessageContextTests
 
         theEnvelope.ScheduledTime.Value.ShouldBeInRange(expectedTime.AddSeconds(-1), expectedTime.AddSeconds(1));
         await theContext.Storage.Inbox.Received().ScheduleExecutionAsync(theEnvelope);
+    }
+    
+    [Fact]
+    public async Task reschedule_convenience_methods_set_reschedule_existing_header()
+    {
+        var callback = Substitute.For<IChannelCallback>();
+        var scheduledTime = DateTime.Today.AddHours(8);
+
+        theContext.ReadEnvelope(theEnvelope, callback);
+
+        // Test that the convenience extension methods set the header
+        await theContext.RescheduleAsync(scheduledTime);
+
+        theEnvelope.Headers.ShouldContainKey(EnvelopeConstants.RescheduleExistingKey);
+        theEnvelope.Headers[EnvelopeConstants.RescheduleExistingKey].ShouldBe("true");
     }
 
     [Fact]
