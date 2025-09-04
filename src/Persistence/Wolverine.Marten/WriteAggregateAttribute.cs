@@ -2,6 +2,7 @@ using System.Reflection;
 using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Model;
+using JasperFx.CodeGeneration.Services;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten;
@@ -10,6 +11,8 @@ using Wolverine.Attributes;
 using Wolverine.Configuration;
 using Wolverine.Persistence;
 using Wolverine.Runtime;
+using Wolverine.Runtime.Handlers;
+using Wolverine.Runtime.Partitioning;
 
 namespace Wolverine.Marten;
 
@@ -18,7 +21,7 @@ namespace Wolverine.Marten;
 ///     "aggregate handler" workflow
 /// </summary>
 [AttributeUsage(AttributeTargets.Parameter)]
-public class WriteAggregateAttribute : WolverineParameterAttribute, IDataRequirement
+public class WriteAggregateAttribute : WolverineParameterAttribute, IDataRequirement, IMayInferMessageIdentity
 {
     public WriteAggregateAttribute()
     {
@@ -128,5 +131,13 @@ public class WriteAggregateAttribute : WolverineParameterAttribute, IDataRequire
         }
 
         return null;
+    }
+
+    public bool TryInferMessageIdentity(HandlerChain chain, out PropertyInfo property)
+    {
+        var aggregateType = AggregateHandling.DetermineAggregateType(chain);
+        var idMember = AggregateHandling.DetermineAggregateIdMember(aggregateType, chain.MessageType);
+        property = idMember as PropertyInfo;
+        return property != null;
     }
 }

@@ -44,6 +44,12 @@ public class SagaChain : HandlerChain
         SagaIdMember = DetermineSagaIdMember(MessageType, SagaType);
     }
 
+    internal override bool TryInferMessageIdentity(out PropertyInfo? property)
+    {
+        property = SagaIdMember as PropertyInfo;
+        return property != null;
+    }
+
     protected override void validateAgainstInvalidSagaMethods(IGrouping<Type, HandlerCall> grouping)
     {
         // Nothing

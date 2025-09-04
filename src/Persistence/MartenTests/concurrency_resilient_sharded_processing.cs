@@ -11,7 +11,7 @@ using Wolverine.Configuration;
 using Wolverine.Marten;
 using Wolverine.Runtime;
 using Wolverine.Runtime.Handlers;
-using Wolverine.Runtime.Sharding;
+using Wolverine.Runtime.Partitioning;
 using Wolverine.Tracking;
 using Wolverine.Transports.Stub;
 
@@ -74,6 +74,52 @@ public class concurrency_resilient_sharded_processing
                         queue.BufferedInMemory();
                     });
                 });
+            }).StartAsync();
+
+        // Re-purposing the test a bit. Making sure we're constructing forwarding correctly
+        var executor = host.GetRuntime().As<IExecutorFactory>().BuildFor(typeof(LogA), new StubEndpoint("Wrong", new StubTransport()));
+        executor.As<Executor>().Handler.ShouldBeOfType<PartitionedMessageReRouter>()
+            .MessageType.ShouldBe(typeof(LogA));
+
+        var tracked = await host.ExecuteAndWaitAsync(pumpOutMessages, 60000);
+        
+        tracked.Executed.Envelopes().Any(x => x.Destination == new Uri("local://letters1")).ShouldBeTrue();
+        tracked.Executed.Envelopes().Any(x => x.Destination == new Uri("local://letters2")).ShouldBeTrue();
+        tracked.Executed.Envelopes().Any(x => x.Destination == new Uri("local://letters3")).ShouldBeTrue();
+        tracked.Executed.Envelopes().Any(x => x.Destination == new Uri("local://letters4")).ShouldBeTrue();
+    }
+    
+    [Fact]
+    public async Task hammer_it_with_lots_of_messages_against_buffered_with_inferred_grouping()
+    {
+        using var host = await Host.CreateDefaultBuilder()
+            .UseWolverine(opts =>
+            {
+                opts.Discovery.DisableConventionalDiscovery().IncludeType(typeof(LetterMessageHandler));
+                
+                opts.Services.AddMarten(m =>
+                {
+                    m.Connection(Servers.PostgresConnectionString);
+                    m.DatabaseSchemaName = "letters";
+                    m.DisableNpgsqlLogging = true;
+                }).IntegrateWithWolverine();
+                
+                                
+                // Telling Wolverine how to assign a GroupId to a message, that we'll use
+                // to predictably sort into "slots" in the processing
+                opts.MessagePartitioning
+                    .UseInferredMessageGrouping()
+                    .PublishToShardedLocalMessaging("letters", 4, topology =>
+                    {
+                        topology.MessagesImplementing<ILetterMessage>();
+                        topology.MaxDegreeOfParallelism = ShardSlots.Five;
+                        
+                        topology.ConfigureQueues(queue =>
+                        {
+                            queue.BufferedInMemory();
+                        });
+                    });
+                
             }).StartAsync();
 
         // Re-purposing the test a bit. Making sure we're constructing forwarding correctly

@@ -9,6 +9,7 @@ using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using Marten;
 using Marten.Events;
+using Microsoft.CodeAnalysis.VisualBasic;
 using Microsoft.Extensions.DependencyInjection;
 using Wolverine.Attributes;
 using Wolverine.Configuration;
@@ -17,6 +18,7 @@ using Wolverine.Marten.Persistence.Sagas;
 using Wolverine.Persistence;
 using Wolverine.Runtime;
 using Wolverine.Runtime.Handlers;
+using Wolverine.Runtime.Partitioning;
 
 namespace Wolverine.Marten;
 
@@ -26,7 +28,7 @@ namespace Wolverine.Marten;
 ///     on new events to persist to the aggregate stream.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
-public class AggregateHandlerAttribute : ModifyChainAttribute, IDataRequirement
+public class AggregateHandlerAttribute : ModifyChainAttribute, IDataRequirement, IMayInferMessageIdentity
 {
     public AggregateHandlerAttribute(ConcurrencyStyle loadStyle)
     {
@@ -70,8 +72,6 @@ public class AggregateHandlerAttribute : ModifyChainAttribute, IDataRequirement
 
         (AggregateIdMember, VersionMember) =
             AggregateHandling.DetermineAggregateIdAndVersion(AggregateType, CommandType, container);
-        
-        
 
         var aggregateFrame = new MemberAccessFrame(CommandType, AggregateIdMember,
             $"{Variable.DefaultArgName(AggregateType)}_Id");
@@ -87,6 +87,14 @@ public class AggregateHandlerAttribute : ModifyChainAttribute, IDataRequirement
         };
         
         handling.Apply(chain, container);
+    }
+
+    public bool TryInferMessageIdentity(HandlerChain chain, out PropertyInfo property)
+    {
+        var aggregateType = AggregateHandling.DetermineAggregateType(chain);
+        var idMember = AggregateHandling.DetermineAggregateIdMember(aggregateType, chain.MessageType);
+        property = idMember as PropertyInfo;
+        return property != null;
     }
 
     public bool Required { get; set; }
