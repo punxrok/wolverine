@@ -42,6 +42,32 @@ public static class MessageBusExtensions
         options.ScheduleDelay = delay;
         return bus.PublishAsync(message, options);
     }
+    
+    /// <summary>
+    ///     Reschedule the current message being handled to be executed at a later time.
+    ///     This can only be used from within a message handler and will update the existing
+    ///     envelope rather than creating a new one (avoiding duplicate key issues).
+    /// </summary>
+    /// <param name="context">The message context from within a handler</param>
+    /// <param name="scheduledTime">When the message should be executed</param>
+    /// <returns></returns>
+    public static Task RescheduleAsync(this IMessageContext context, DateTimeOffset scheduledTime)
+    {
+        return ((IEnvelopeLifecycle)context).ReScheduleAsync(scheduledTime);
+    }
+    
+    /// <summary>
+    ///     Reschedule the current message being handled to be executed after a delay.
+    ///     This can only be used from within a message handler and will update the existing
+    ///     envelope rather than creating a new one (avoiding duplicate key issues).
+    /// </summary>
+    /// <param name="context">The message context from within a handler</param>
+    /// <param name="delay">How long to delay before executing the message</param>
+    /// <returns></returns>
+    public static Task RescheduleAsync(this IMessageContext context, TimeSpan delay)
+    {
+        return ((IEnvelopeLifecycle)context).ReScheduleAsync(DateTimeOffset.UtcNow.Add(delay));
+    }
 }
 
 public interface ICommandBus

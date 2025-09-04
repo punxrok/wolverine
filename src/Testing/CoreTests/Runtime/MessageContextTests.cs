@@ -130,9 +130,40 @@ public class MessageContextTests
 
         theEnvelope.ScheduledTime.ShouldBe(scheduledTime);
 
-        await theContext.Storage.Inbox.DidNotReceive().ScheduleJobAsync(theEnvelope);
+        await theContext.Storage.Inbox.DidNotReceive().ScheduleExecutionAsync(theEnvelope);
         await callback.As<ISupportNativeScheduling>().Received()
             .MoveToScheduledUntilAsync(theEnvelope, scheduledTime);
+    }
+
+    [Fact]
+    public async Task reschedule_convenience_method_with_DateTimeOffset()
+    {
+        var callback = Substitute.For<IChannelCallback>();
+        var scheduledTime = DateTime.Today.AddHours(8);
+
+        theContext.ReadEnvelope(theEnvelope, callback);
+
+        // Test the new convenience extension method
+        await theContext.RescheduleAsync(scheduledTime);
+
+        theEnvelope.ScheduledTime.ShouldBe(scheduledTime);
+        await theContext.Storage.Inbox.Received().ScheduleExecutionAsync(theEnvelope);
+    }
+    
+    [Fact]
+    public async Task reschedule_convenience_method_with_TimeSpan()
+    {
+        var callback = Substitute.For<IChannelCallback>();
+        var delay = TimeSpan.FromHours(2);
+        var expectedTime = DateTimeOffset.UtcNow.Add(delay);
+
+        theContext.ReadEnvelope(theEnvelope, callback);
+
+        // Test the new convenience extension method with TimeSpan
+        await theContext.RescheduleAsync(delay);
+
+        theEnvelope.ScheduledTime.Value.ShouldBeInRange(expectedTime.AddSeconds(-1), expectedTime.AddSeconds(1));
+        await theContext.Storage.Inbox.Received().ScheduleExecutionAsync(theEnvelope);
     }
 
     [Fact]
