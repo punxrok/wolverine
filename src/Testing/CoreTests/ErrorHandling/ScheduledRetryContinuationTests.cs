@@ -1,4 +1,5 @@
 using CoreTests.Runtime;
+using JasperFx.Core.Reflection;
 using NSubstitute;
 using Wolverine;
 using Wolverine.ComplianceTests;
@@ -21,9 +22,9 @@ public class ScheduledRetryContinuationTests
         var continuation = new ScheduledRetryContinuation(TimeSpan.FromMinutes(5));
         
         await continuation.ExecuteAsync(context, new MockWolverineRuntime(), DateTimeOffset.Now, null);
-        
+
         // Verify the header is set
-        envelope.Headers.ShouldContainKey(EnvelopeConstants.RescheduleExistingKey);
+        ((IDictionary<string, string?>)envelope.Headers).ShouldContainKey(EnvelopeConstants.RescheduleExistingKey);
         envelope.Headers[EnvelopeConstants.RescheduleExistingKey].ShouldBe("true");
         
         // Verify ReScheduleAsync was called

@@ -590,8 +590,10 @@ public class EnvelopeTests
         var envelope = new Envelope();
         
         envelope.MarkForRescheduleExisting();
-        
-        envelope.Headers.ShouldContainKey(EnvelopeConstants.RescheduleExistingKey);
+
+
+        ((IDictionary<string, string?>)envelope.Headers).ShouldContainKey(EnvelopeConstants.RescheduleExistingKey);
         envelope.Headers[EnvelopeConstants.RescheduleExistingKey].ShouldBe("true");
     }
+
 }

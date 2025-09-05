@@ -197,7 +197,7 @@ public class MessageContextTests
         // Test that the convenience extension methods set the header
         await theContext.RescheduleAsync(scheduledTime);
 
-        theEnvelope.Headers.ShouldContainKey(EnvelopeConstants.RescheduleExistingKey);
+        ((IDictionary<string, string?>)theEnvelope.Headers).ShouldContainKey(EnvelopeConstants.RescheduleExistingKey);
         theEnvelope.Headers[EnvelopeConstants.RescheduleExistingKey].ShouldBe("true");
     }
 
