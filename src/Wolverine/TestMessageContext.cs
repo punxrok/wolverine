@@ -258,7 +258,7 @@ public class TestMessageContext : IMessageContext
         return ValueTask.CompletedTask;
     }
 
-    public ValueTask RescheduleAsync(DateTimeOffset rescheduledAt)
+    public Task RescheduleCurrentAsync(DateTimeOffset rescheduledAt)
     {
         throw new NotImplementedException();
     }

@@ -152,6 +152,14 @@ public class MessageContext : MessageBus, IMessageContext, IHasTenantId, IEnvelo
         }
     }
 
+    public override async Task RescheduleCurrentAsync(DateTimeOffset rescheduledAt)
+    {
+        // Mark the envelope for rescheduling existing record as documented
+        Envelope?.MarkForRescheduleExisting();
+
+        await ReScheduleAsync(rescheduledAt);
+    }
+
     public async Task MoveToDeadLetterQueueAsync(Exception exception)
     {
         // Don't bother with agent commands

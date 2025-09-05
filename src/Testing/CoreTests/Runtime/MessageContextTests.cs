@@ -164,7 +164,7 @@ public class MessageContextTests
         theContext.ReadEnvelope(theEnvelope, callback);
 
         // Test the new convenience extension method
-        await theContext.RescheduleAsync(scheduledTime);
+        await theContext.RescheduleCurrentAsync(scheduledTime);
 
         theEnvelope.ScheduledTime.ShouldBe(scheduledTime);
         await theContext.Storage.Inbox.Received().ScheduleExecutionAsync(theEnvelope);
@@ -195,7 +195,7 @@ public class MessageContextTests
         theContext.ReadEnvelope(theEnvelope, callback);
 
         // Test that the convenience extension methods set the header
-        await theContext.RescheduleAsync(scheduledTime);
+        await theContext.RescheduleCurrentAsync(scheduledTime);
 
         ((IDictionary<string, string?>)theEnvelope.Headers).ShouldContainKey(EnvelopeConstants.RescheduleExistingKey);
         theEnvelope.Headers[EnvelopeConstants.RescheduleExistingKey].ShouldBe("true");

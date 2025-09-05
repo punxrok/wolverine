@@ -29,8 +29,9 @@ public interface IMessageContext : IMessageBus
     ///     Reschedule the current message for redelivery at a later time
     ///     This can only be used from within a message handler
     /// </summary>
+    /// <param name="rescheduledAt"></param>
     /// <param name="response"></param>
     /// <param name="context"></param>
     /// <returns></returns>
-    ValueTask RescheduleAsync(DateTimeOffset rescheduledAt);
+    Task RescheduleCurrentAsync(DateTimeOffset rescheduledAt);
 }

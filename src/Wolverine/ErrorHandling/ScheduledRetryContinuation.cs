@@ -21,9 +21,10 @@ internal class ScheduledRetryContinuation : IContinuation, IContinuationSource
         var scheduledTime = now.Add(_delay);
 
         // Mark this envelope as rescheduling an existing record since this is a retry
-        if (lifecycle is IMessageContext context && context.Envelope != null)
+        if (lifecycle is IMessageContext { Envelope: not null } context)
         {
-            context.Envelope.MarkForRescheduleExisting();
+            if (context.Envelope.Sender.IsDurable)
+                context.Envelope.MarkForRescheduleExisting();
         }
 
         return new ValueTask(lifecycle.ReScheduleAsync(scheduledTime));
