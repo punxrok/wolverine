@@ -5,7 +5,7 @@ namespace Wolverine.Pulsar.ErrorHandling;
 
 public class PulsarNativeContinuationSource : IContinuationSource
 {
-    public string Description { get; }
+    public string Description { get; } = "Pulsar native retry and dead letter queue handling";
 
     public IContinuation Build(Exception ex, Envelope envelope)
     {
@@ -15,7 +15,7 @@ public class PulsarNativeContinuationSource : IContinuationSource
             return new PulsarNativeResiliencyContinuation(ex);
         }
 
-        // Return null to let the next continuation source handle it
-        return null;
+        // Fall back to standard error handling if not a Pulsar listener
+        return new MoveToErrorQueue(ex);
     }
 }

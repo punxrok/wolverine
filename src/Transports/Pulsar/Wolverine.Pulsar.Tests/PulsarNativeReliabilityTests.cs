@@ -91,31 +91,39 @@ public class PulsarNativeReliabilityTests : /*TransportComplianceFixture,*/ IAsy
             .ShouldBe(3);
 
 
-        // TODO: I Guess the capture of the envelope headers occurs before we manipulate it
+        // Validate envelope ID preservation across retry/DLQ operations
+        // All envelopes should maintain the same Wolverine ID for proper message identity tracking
+        var originalEnvelope = session.Received.Envelopes().First();
+        var originalId = originalEnvelope.Id;
+        
         var firstRequeuedEnvelope = session.Requeued.Envelopes().First();
         firstRequeuedEnvelope.ShouldSatisfyAllConditions(
             () => firstRequeuedEnvelope.Attempts.ShouldBe(1),
-            () => firstRequeuedEnvelope.Headers.ContainsKey("DELAY_TIME").ShouldBeFalse()
+            () => firstRequeuedEnvelope.Headers.ContainsKey("DELAY_TIME").ShouldBeFalse(),
+            () => firstRequeuedEnvelope.Id.ShouldBe(originalId) // Envelope ID should be preserved
         );
         var secondRequeuedEnvelope = session.Requeued.Envelopes().Skip(1).First();
         secondRequeuedEnvelope.ShouldSatisfyAllConditions(
             () => secondRequeuedEnvelope.Attempts.ShouldBe(2),
             () => secondRequeuedEnvelope.Headers.ContainsKey("DELAY_TIME").ShouldBeTrue(),
-            () => secondRequeuedEnvelope.Headers["DELAY_TIME"].ShouldBe(TimeSpan.FromSeconds(4).TotalMilliseconds.ToString())
+            () => secondRequeuedEnvelope.Headers["DELAY_TIME"].ShouldBe(TimeSpan.FromSeconds(4).TotalMilliseconds.ToString()),
+            () => secondRequeuedEnvelope.Id.ShouldBe(originalId) // Envelope ID should be preserved
         );
 
         var thirdRequeuedEnvelope = session.Requeued.Envelopes().Skip(2).First();
         thirdRequeuedEnvelope.ShouldSatisfyAllConditions(
             () => thirdRequeuedEnvelope.Attempts.ShouldBe(3),
             () => thirdRequeuedEnvelope.Headers.ContainsKey("DELAY_TIME").ShouldBeTrue(),
-            () => thirdRequeuedEnvelope.Headers["DELAY_TIME"].ShouldBe(TimeSpan.FromSeconds(2).TotalMilliseconds.ToString())
+            () => thirdRequeuedEnvelope.Headers["DELAY_TIME"].ShouldBe(TimeSpan.FromSeconds(2).TotalMilliseconds.ToString()),
+            () => thirdRequeuedEnvelope.Id.ShouldBe(originalId) // Envelope ID should be preserved
         );
 
 
         var dlqEnvelope = session.MovedToErrorQueue.Envelopes().First();
         dlqEnvelope.ShouldSatisfyAllConditions(
             () => dlqEnvelope.Headers.ContainsKey(PulsarEnvelopeConstants.Exception).ShouldBeTrue(),
-            () => dlqEnvelope.Headers[PulsarEnvelopeConstants.ReconsumeTimes].ShouldBe("3")
+            () => dlqEnvelope.Headers[PulsarEnvelopeConstants.ReconsumeTimes].ShouldBe("3"),
+            () => dlqEnvelope.Id.ShouldBe(originalId) // Envelope ID should be preserved even in DLQ
         );
 
     }

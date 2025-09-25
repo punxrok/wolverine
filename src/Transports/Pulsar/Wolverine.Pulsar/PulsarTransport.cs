@@ -26,8 +26,18 @@ public class PulsarTransport : TransportBase<PulsarEndpoint>, IAsyncDisposable
     public IPulsarClientBuilder Builder { get; }
 
     internal IPulsarClient? Client { get; private set; }
-    public DeadLetterTopic? DeadLetterTopic { get; internal set; } // TODO: should we even have a default or just per endpoint based?
-    public RetryLetterTopic? RetryLetterTopic { get; internal set; } // TODO: should we even have a default or just per endpoint based?
+    
+    /// <summary>
+    /// Transport-level default dead letter topic configuration.
+    /// Can be overridden at the endpoint level for specific topics.
+    /// </summary>
+    public DeadLetterTopic? DeadLetterTopic { get; internal set; }
+    
+    /// <summary>
+    /// Transport-level default retry letter topic configuration.
+    /// Can be overridden at the endpoint level for specific topics.
+    /// </summary>
+    public RetryLetterTopic? RetryLetterTopic { get; internal set; }
 
 
     //private IEnumerable<DeadLetterTopic> enabledDeadLetterTopics()

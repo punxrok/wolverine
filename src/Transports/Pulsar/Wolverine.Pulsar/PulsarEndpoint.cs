@@ -112,13 +112,8 @@ public class PulsarEndpoint : Endpoint
 
     public override bool TryBuildDeadLetterSender(IWolverineRuntime runtime, out ISender? deadLetterSender)
     {
+        // Use base implementation for now - DLQ handling is done via native Pulsar mechanisms
+        // in the PulsarListener when native DLQ is enabled
         return base.TryBuildDeadLetterSender(runtime, out deadLetterSender);
-
-
-        // TODO: ?
-        //var queueName =  this.DeadLetterTopic?.TopicName ?? _parent.DeadLetterTopic.TopicName;
-        //var dlq = _parent[UriFor(queueName)];
-        //deadLetterSender = dlq.CreateSender(runtime);
-        //return true;
     }
 }

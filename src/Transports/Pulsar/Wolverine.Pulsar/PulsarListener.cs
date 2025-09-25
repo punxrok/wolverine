@@ -56,7 +56,8 @@ internal class PulsarListener : IListener, ISupportDeadLetterQueue, ISupportNati
             .Topic(endpoint.PulsarTopic())
             .Create();
 
-        // TODO: check
+        // Native DLQ is enabled if either transport-level or endpoint-level DLQ is configured 
+        // and not using Wolverine's internal storage
         NativeDeadLetterQueueEnabled = transport.DeadLetterTopic is not null &&
                                        transport.DeadLetterTopic.Mode != DeadLetterTopicMode.WolverineStorage ||
                                        endpoint.DeadLetterTopic is not null && endpoint.DeadLetterTopic.Mode !=
@@ -297,9 +298,14 @@ internal class PulsarListener : IListener, ISupportDeadLetterQueue, ISupportNati
                 associatedProducer = _dlqProducer!;
             }
 
-            await associatedConsumer.Acknowledge(e.MessageData,
-                _cancellation); // TODO: check: original message should be acked and copy is sent to retry/DLQ
-            // TODO: check: what to do with the original message on Wolverine side? I Guess it should be acked? or we could use some kind of RequeueContinuation in FailureRuleCollection. If I understand correctly, Wolverine is/should handle original Wolverine message and its copies across Pulsar's topics as same identity?
+            // Acknowledge the original message in Pulsar - this is correct behavior
+            // The original Pulsar message is acknowledged to prevent redelivery from the source topic
+            // while the envelope's identity (Wolverine ID) is preserved in the new topic via metadata
+            await associatedConsumer.Acknowledge(e.MessageData, _cancellation);
+            
+            // Send a copy to retry/DLQ topic with preserved Wolverine envelope identity
+            // The envelope's identity is maintained through the EnvelopeConstants.IdKey header
+            // This ensures Wolverine can track the same logical message across different Pulsar topics
 
             await associatedProducer.Send(messageMetadata, e.MessageData.Data, _cancellation)
                 .ConfigureAwait(false);
@@ -316,16 +322,18 @@ internal class PulsarListener : IListener, ISupportDeadLetterQueue, ISupportNati
             messageMetadata[property.Key] = property.Value;
         }
 
-        //reconsumeTimesValue = GetReconsumeHeader(messageMetadata);
+        // Ensure Wolverine envelope ID is preserved across topic moves
+        // This is critical for maintaining message identity tracking in Wolverine
+        messageMetadata[EnvelopeConstants.IdKey] = envelope.Id.ToString();
 
         if (!e.Headers.TryGetValue(PulsarEnvelopeConstants.RealTopicMetadataKey, out var originTopicNameStr))
         {
             originTopicNameStr = envelope.Headers[EnvelopeConstants.ReplyUriKey];
-
         }
 
         messageMetadata[PulsarEnvelopeConstants.RealTopicMetadataKey] = originTopicNameStr;
 
+        // Track the original Pulsar message ID for Pulsar-level correlation
         var eid = e.Headers.GetValueOrDefault(PulsarEnvelopeConstants.OriginMessageIdMetadataKey,
             e.MessageData.MessageId.ToString());
 

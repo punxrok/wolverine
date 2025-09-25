@@ -139,10 +139,8 @@ public class PulsarListenerConfiguration : ListenerConfiguration<PulsarListenerC
             e.SubscriptionType = subscriptionType;
         });
 
-        // TODO: check how to restrict it properly
-        //if (subscriptionType is DotPulsar.SubscriptionType.Shared or DotPulsar.SubscriptionType.KeyShared)
-        //    return new PulsarSharedListenerConfiguration(this._endpoint);
-
+        // Note: Future enhancement could return specialized configuration classes 
+        // for different subscription types if needed
         return this;
     }
 
