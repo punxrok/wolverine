@@ -3,7 +3,9 @@ using DotPulsar;
 namespace Wolverine.Pulsar;
 
 /// <summary>
-/// TODO: how to handle retries internally in Wolverine?
+/// Represents configuration for Pulsar retry letter topic functionality.
+/// Retry handling is managed through Pulsar's native delayed message delivery
+/// in conjunction with Wolverine's error handling pipeline.
 /// </summary>
 public class RetryLetterTopic
 {
