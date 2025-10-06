@@ -359,4 +359,13 @@ public partial class Envelope
             SagaId = SagaId
         };
     }
+
+    /// <summary>
+    /// Mark this envelope to use ScheduleExecutionAsync (update existing record) instead of ScheduleJobAsync (create new record)
+    /// when rescheduling through ReScheduleAsync
+    /// </summary>
+    public void MarkForRescheduleExisting()
+    {
+        Headers[EnvelopeConstants.RescheduleExistingKey] = "true";
+    }
 }

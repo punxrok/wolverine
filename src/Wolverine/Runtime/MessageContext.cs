@@ -139,8 +139,25 @@ public class MessageContext : MessageBus, IMessageContext, IHasTenantId, IEnvelo
         }
         else
         {
-            await Storage.Inbox.ScheduleExecutionAsync(Envelope);
+            // Check if this is rescheduling an existing envelope or creating a new scheduled job
+            if (Envelope.Headers.ContainsKey(EnvelopeConstants.RescheduleExistingKey) && 
+                Envelope.Headers[EnvelopeConstants.RescheduleExistingKey] == "true")
+            {
+                await Storage.Inbox.ScheduleExecutionAsync(Envelope);
+            }
+            else
+            {
+                await Storage.Inbox.ScheduleJobAsync(Envelope);
+            }
         }
+    }
+
+    public override async Task RescheduleCurrentAsync(DateTimeOffset rescheduledAt)
+    {
+        // Mark the envelope for rescheduling existing record as documented
+        Envelope?.MarkForRescheduleExisting();
+
+        await ReScheduleAsync(rescheduledAt);
     }
 
     public async Task MoveToDeadLetterQueueAsync(Exception exception)

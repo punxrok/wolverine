@@ -20,6 +20,13 @@ internal class ScheduledRetryContinuation : IContinuation, IContinuationSource
         activity?.AddEvent(new ActivityEvent(WolverineTracing.ScheduledRetry));
         var scheduledTime = now.Add(_delay);
 
+        // Mark this envelope as rescheduling an existing record since this is a retry
+        if (lifecycle is IMessageContext { Envelope: not null } context)
+        {
+            if (context.Envelope.Sender.IsDurable)
+                context.Envelope.MarkForRescheduleExisting();
+        }
+
         return new ValueTask(lifecycle.ReScheduleAsync(scheduledTime));
     }
 
